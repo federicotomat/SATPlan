@@ -392,4 +392,5 @@ def visitor(e, seen):
             yield e
     return
 
-
+def makeName(name, step):
+    return str(name) + "@" + str(step)

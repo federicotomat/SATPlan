@@ -3,18 +3,9 @@ import subprocess
 import sys
 
 class Plan():
-    def __init__(self, model, encoder):
-        self.plan = self.extractPlan(model, encoder)
-
-    def extractPlan(self, model, encoder):
-        """
-        Extract linear plan from model of the formula
-        """
-
-        ## extract plan for model
-
-        return plan
-
+    def __init__(self, plan, horizon):
+        self.plan = plan
+        self.horizon = horizon
 
     def validate(self, val, domain, problem):
         from tempfile import NamedTemporaryFile
@@ -42,7 +33,6 @@ class Plan():
             return plan_to_str
         else:
             return None
-
 
     def pprint(self, dest):
         print('Printing plan to {}'.format(dest))

@@ -1,3 +1,3 @@
 #!/bin/bash 
 
-    java -classpath /home/federico/Scrivania/finalProject/code/enhsp/src/:/home/federico/Scrivania/finalProject/code/enhsp/libs/PPMaJal2.jar:/home/federico/Scrivania/finalProject/code/enhsp/libs/* ENHSP "$@"
+    java -classpath /home/federico/Scrivania/SATPlan/code/enhsp/src/:/home/federico/Scrivania/SATPlan/code/enhsp/libs/PPMaJal2.jar:/home/federico/Scrivania/SATPlan/code/enhsp/libs/* ENHSP "$@"
