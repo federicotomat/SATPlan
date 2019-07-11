@@ -10,10 +10,10 @@ class Modifier():
         self.action_variables = action_variables
         mutexes = []
 
-        for a1 in actions:
-            for a2 in actions:
-                if not a1.name == a2.name:
-                    for step in range(self.horizon):
+        for step in range(self.horizon):
+            for a1 in actions:
+                for a2 in actions:
+                    if not a1.name == a2.name:
                         mutexes.append(-(self.action_variables[utils.makeName(a1.name, step)]) | -(
                             self.action_variables[str(a2.name) + "@" + str(step)]))
 
@@ -36,10 +36,10 @@ class Modifier():
         self.boolean_variables = boolean_variables
         self.action_variables = action_variables
         mutexes = []
-        for a1 in self.actions:
-            for a2 in self.actions:
-                if not a1.name == a2.name:
-                    for step in range(self.horizon):
+        for step in range(self.horizon):
+            for a1 in self.actions:
+                for a2 in self.actions:
+                    if not a1.name == a2.name:
 
                         preaction_a1 = set()
                         for pre in a1.condition:
