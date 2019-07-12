@@ -11,6 +11,7 @@ import modifier
 
 # TODO: Scrivere commenti e togliere quelli inutili
 
+
 class EncoderSAT():
 
     def __init__(self, task, modifier, horizon):
@@ -103,7 +104,6 @@ class EncoderSAT():
         initial = []
 
         for fact in self.task.init:
-
             if utils.isBoolFluent(fact):
                 if not fact.predicate == '=':
                     if fact in self.boolean_fluents:
@@ -114,20 +114,23 @@ class EncoderSAT():
                 raise Exception(
                     'Initial condition \'{}\': type \'{}\' not recognized'.format(fact, type(fact)))
 
-        # Close-world assumption: if fluent is not asserted
+        # Close-world assumption: if fluent is not_M_.mkAndArray(_M_.mkVarArray(initial)) asserted
         # in init formula then it must be set to false.
 
         for var_name in self.boolean_variables:
-            var = self.boolean_variables[var_name]
-            if not var in initial:
-                initial.append(-var)
+            step = utils.getStep(var_name)
+            if step == 0:
+                var = self.boolean_variables[var_name]
+                if not var in initial:
+                    initial.append(-var)
 
         for variable in initial:
             if variable is initial[0]:
                 encodeInitialState = variable
             else:
-                encodeInitialState = encodeInitialState & variable
+                encodeInitialState = (encodeInitialState & variable)
 
+        # print(encodeInitialState)
         return encodeInitialState
 
     def encodeGoalState(self):
@@ -174,7 +177,8 @@ class EncoderSAT():
             if variable is propositional_subgoal[0]:
                 encodeGoalState = variable
             else:
-                encodeGoalState = encodeGoalState & variable
+                encodeGoalState = (encodeGoalState & variable)
+        
         return encodeGoalState
 
     # Qua ritorno un'unica formula oppure una formula per azione?
@@ -245,8 +249,7 @@ class EncoderSAT():
                     else:
                         del_formula = del_formula & variable
 
-                exp = (action_variable >> (
-                    precondition_formula & add_formula & del_formula))
+                exp = (action_variable >> (precondition_formula & add_formula & del_formula))
                 actions.append(exp)
 
         for subformula in actions:
@@ -299,8 +302,8 @@ class EncoderSAT():
                                     subformula2 = subformula2 | self.action_variables[utils.makeName(
                                         action.name, step)]
 
-                exp = (((fluent_i & -(fluent_i_plus_one)) >> subformula1)
-                       & ((-(fluent_i) & fluent_i_plus_one) >> subformula2))
+                exp = (((fluent_i & -(fluent_i_plus_one)) >> subformula2)
+                       & ((-(fluent_i) & fluent_i_plus_one) >> subformula1))
                 frame.append(exp)
 
         for subformula in frame:
@@ -321,7 +324,6 @@ class EncoderSAT():
             action_name = act.split('@', 1)
             action_set.add(action_name[0])
 
-        # Rimuovo i duplicati dal set di actions, qua ho delle stringhe, devo farci un dizionario di formule
         action_list = list(set(action_set))
 
         for step in range(self.horizon):
@@ -354,35 +356,28 @@ class EncoderSAT():
         self.createVariables()
 
         ### Start encoding formula ###
-
         formula = defaultdict(list)
 
         # Encode initial state axioms
-
         formula['initial'] = self.encodeInitialState()
 
         # Encode goal state axioms
-
         formula['goal'] = self.encodeGoalState()
 
         # Encode universal axioms
-
         formula['actions'] = self.encodeActions()
 
         # Encode explanatory frame axioms
-
         formula['frame'] = self.encodeFrame()
 
         # Encode execution semantics (lin/par)
-
         formula['sem'] = self.encodeExecutionSemantics()
 
         # Encode at least one axioms
-
         formula['alo'] = self.encodeAtLeastOne()
 
-        formulaToSolve = formula['initial'] & formula['actions'] & formula[
-            'frame'] & formula['alo'] & formula['goal'] & formula['sem']
+        for formulaToSolve in formula.values():
+            formulaToSolve = formulaToSolve & formulaToSolve
         return formulaToSolve
 
     def dump(self):

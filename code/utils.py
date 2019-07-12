@@ -394,3 +394,7 @@ def visitor(e, seen):
 
 def makeName(name, step):
     return str(name) + "@" + str(step)
+
+def getStep(var_name):
+    [name, step] = var_name.split("@")
+    return int(step)

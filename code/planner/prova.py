@@ -5,6 +5,10 @@ import sys
 
 if __name__ == '__main__':
 
+    stringa = "ciao@1"
+    [x, y] = stringa.split("@")
+    print(x)
+    print(y)
     v1 = Variable("v1")
     v2 = Variable("v2")
     v3 = Variable("v3")

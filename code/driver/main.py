@@ -66,7 +66,6 @@ def main(BASE_DIR):
     else:
         modifier = False
 
-    initial_horizon = 1 # Dovrei usare l'horizon che mi arriva dall'enhsp (ottimale?) -> Vedere quel codice
     plan = False
     # Questo while va messo dentro la search
     while plan is False:
@@ -74,7 +73,6 @@ def main(BASE_DIR):
         s = search.LinearSearch(e, initial_horizon)
         plan = s.do_search()
         initial_horizon = initial_horizon + 1
-        break # Lo fermo perchè dovrebbe bastare uno step
 
     ## VALidate and print plan
     try:
@@ -90,7 +88,3 @@ def main(BASE_DIR):
     except:
         print('Could not validate plan, exiting now...')
         sys.exit()
-
-# TODO: cambiare qusto obrobrio di percorso assoluto
-if __name__ == '__main__':
-    main("/home/federico/Scrivania/SATPlan/code")
