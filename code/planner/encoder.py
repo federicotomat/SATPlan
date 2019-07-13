@@ -258,7 +258,7 @@ class EncoderSAT():
                 for action in self.actions:
                     # Check if f_i is in del of some act_i
                     for de in action.del_effects:
-                        del_name = utils.makeName(de[1], step + 1)
+                        del_name = utils.makeName(de[1], step)
                         if del_name in self.boolean_variables:
                             if fluent_i == self.boolean_variables[del_name]:
                                 action_delete_fluent.append(self.action_variables[utils.makeName(action.name, step)])
@@ -290,6 +290,7 @@ class EncoderSAT():
                     else:
                         frame.append((fluent_i | -(fluent_i_plus_one)))
 
+            break
         for subformula in frame:
             if subformula is frame[0]:
                 encodeFrame = subformula
