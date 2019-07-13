@@ -5,7 +5,7 @@ import sys
 class Plan():
     def __init__(self, plan, horizon):
         self.plan = plan
-        self.horizon = horizon
+        self.cost = horizon
 
     def validate(self, val, domain, problem):
         from tempfile import NamedTemporaryFile

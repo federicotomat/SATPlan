@@ -11,7 +11,6 @@ import modifier
 
 # TODO: Scrivere commenti e togliere quelli inutili
 
-
 class EncoderSAT():
 
     def __init__(self, task, modifier, horizon):
@@ -181,8 +180,6 @@ class EncoderSAT():
         
         return encodeGoalState
 
-    # Qua ritorno un'unica formula oppure una formula per azione?
-
     def encodeActions(self):
         """
         Encode action constraints:
@@ -194,70 +191,50 @@ class EncoderSAT():
 
         for step in range(self.horizon):
             for action in self.actions:
-                # Ho bisogno di due liste, rispettivamente per ADD e per DEL, ovvero per tenere i fluent che vengono aggiunti
-                # da una determinata azione e quelli che vengono rimossi, per ogni azione
 
-                # Devo farlo per ogni action, ho il nome:
-                action_variable = self.action_variables[utils.makeName(
-                    action.name, step)]
+                action_variable = self.action_variables[utils.makeName(action.name, step)]
+                condition_list = list()
 
-                precondition_list = list()
                 # Encode preconditions
                 for pre in action.condition:
                     pre_name = utils.makeName(pre, step)
                     if pre_name in self.boolean_variables:
-                        # Ho una lista di "formule" di precondition
                         if isinstance(pre, pddl.conditions.NegatedAtom):
-                            precondition_list.append(
-                                -(self.boolean_variables[pre_name]))
+                            condition_list.append(-(self.boolean_variables[pre_name]))
                         else:
-                            precondition_list.append(
-                                self.boolean_variables[pre_name])
+                            condition_list.append(self.boolean_variables[pre_name])
 
-                add_list = list()
-                # Encode add effects (conditional supported)
+                # Encode add effects
                 for add in action.add_effects:
-                    # Aggiunto la successiva
                     add_name = utils.makeName(add[1], step + 1)
                     if add_name in self.boolean_variables:
-                        # Ho una lista di "formule" di add
-                        add_list.append(self.boolean_variables[add_name])
-
-                del_list = list()
-                # Encode delete effects (conditional supported)
+                        condition_list.append(self.boolean_variables[add_name])
+                
+                # Encode delete effects
                 for de in action.del_effects:
                     del_name = utils.makeName(de[1], step + 1)
                     if del_name in self.boolean_variables:
-                        del_list.append(-(self.boolean_variables[del_name]))
+                        condition_list.append(-(self.boolean_variables[del_name]))
 
-                # TODO: ridurre questi step
-                for variable in precondition_list:
-                    if variable is precondition_list[0]:
-                        precondition_formula = variable
+                # Make AND and insert in list
+                for variable in condition_list:
+                    if variable is condition_list[0]:
+                        formula = variable
                     else:
-                        precondition_formula = precondition_formula & variable
-
-                for variable in add_list:
-                    if variable is add_list[0]:
-                        add_formula = variable
-                    else:
-                        add_formula = add_formula & variable
-
-                for variable in del_list:
-                    if variable is del_list[0]:
-                        del_formula = variable
-                    else:
-                        del_formula = del_formula & variable
-
-                exp = (action_variable >> (precondition_formula & add_formula & del_formula))
-                actions.append(exp)
+                        formula = formula & variable
+                
+                cond = (action_variable >> formula)
+                actions.append(cond)        
 
         for subformula in actions:
             if subformula is actions[0]:
                 encodeActions = subformula
             else:
                 encodeActions = encodeActions & subformula
+        
+       # print(encodeActions)
         return encodeActions
+
 
     def encodeFrame(self):
         """
@@ -275,43 +252,49 @@ class EncoderSAT():
                 fluent_name_suc = utils.makeName(fluent, step + 1)
                 fluent_i_plus_one = self.boolean_variables[fluent_name_suc]
 
+                action_delete_fluent = list()
+                action_add_fluent = list()
+
                 for action in self.actions:
-                    control = False
-                    for add in action.add_effects:
-                        add_name = utils.makeName(add[1], step)
-                        if add_name in self.boolean_variables:
-                            if fluent_i == self.boolean_variables[add_name]:
-                                if control is False:
-                                    subformula1 = self.action_variables[utils.makeName(
-                                        action.name, step)]
-                                    control = True
-                                else:
-                                    subformula1 = subformula1 | self.action_variables[utils.makeName(
-                                        action.name, step)]
-
-                    control = False
+                    # Check if f_i is in del of some act_i
                     for de in action.del_effects:
-                        del_name = utils.makeName(de[1], step)
-                        if add_name in self.boolean_variables:
+                        del_name = utils.makeName(de[1], step + 1)
+                        if del_name in self.boolean_variables:
                             if fluent_i == self.boolean_variables[del_name]:
-                                if control is False:
-                                    subformula2 = self.action_variables[utils.makeName(
-                                        action.name, step)]
-                                    control = True
-                                else:
-                                    subformula2 = subformula2 | self.action_variables[utils.makeName(
-                                        action.name, step)]
+                                action_delete_fluent.append(self.action_variables[utils.makeName(action.name, step)])
+                    
+                    if len(action_delete_fluent) is not 0:
+                        for formula in action_delete_fluent:
+                            if formula is action_delete_fluent[0]:
+                                exp = formula
+                            else:
+                                exp = exp | formula
+                        frame.append((fluent_i & -(fluent_i_plus_one)) >> exp)
+                    else:
+                        frame.append((-(fluent_i) | fluent_i_plus_one))
 
-                exp = (((fluent_i & -(fluent_i_plus_one)) >> subformula2)
-                       & ((-(fluent_i) & fluent_i_plus_one) >> subformula1))
-                frame.append(exp)
+                    # Check of f_i+1 is in add of some act_i
+                    for add in action.add_effects:
+                        add_name = utils.makeName(add[1], step + 1)
+                        if add_name in self.boolean_variables:
+                            if fluent_i_plus_one == self.boolean_variables[add_name]:
+                                action_add_fluent.append(self.action_variables[utils.makeName(action.name, step)])
+                    
+                    if len(action_add_fluent) is not 0:
+                        for formula in action_add_fluent:
+                            if formula is action_add_fluent[0]:
+                                exp = formula
+                            else:
+                                exp = exp | formula
+                        frame.append((-(fluent_i) & fluent_i_plus_one) >> exp)
+                    else:
+                        frame.append((fluent_i | -(fluent_i_plus_one)))
 
         for subformula in frame:
             if subformula is frame[0]:
                 encodeFrame = subformula
             else:
                 encodeFrame = encodeFrame & subformula
-
         return encodeFrame
 
     def encodeAtLeastOne(self):
@@ -326,6 +309,7 @@ class EncoderSAT():
 
         action_list = list(set(action_set))
 
+        # Disjunctions of all action at step i
         for step in range(self.horizon):
             for act in action_list:
                 action_name = utils.makeName(act, step)
@@ -342,6 +326,7 @@ class EncoderSAT():
             else:
                 encodeAtLeastOne = encodeAtLeastOne & subformula
 
+        print(encodeAtLeastOne)
         return encodeAtLeastOne
 
     def encodeExecutionSemantics(self):
@@ -376,8 +361,15 @@ class EncoderSAT():
         # Encode at least one axioms
         formula['alo'] = self.encodeAtLeastOne()
 
-        for formulaToSolve in formula.values():
-            formulaToSolve = formulaToSolve & formulaToSolve
+        control = False
+        for row in formula.values():
+            if control is False:
+                formulaToSolve = row
+                control = True
+            else:
+                formulaToSolve &= row
+
+        # print(formulaToSolve)
         return formulaToSolve
 
     def dump(self):

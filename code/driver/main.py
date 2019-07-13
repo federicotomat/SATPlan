@@ -48,7 +48,7 @@ def main(BASE_DIR):
     match = re.search('Plan-Length:(\d+)', out)
     if match:
         initial_horizon = int(match.group(1))
-        print('Intial horizon: {}'.format(initial_horizon))
+        print('Initial horizon: {}'.format(initial_horizon))
 
     else:
         ## Computing horizon with GBFS failed for some reason
@@ -66,13 +66,9 @@ def main(BASE_DIR):
     else:
         modifier = False
 
-    plan = False
-    # Questo while va messo dentro la search
-    while plan is False:
-        e = encoder.EncoderSAT(task, modifier, initial_horizon).encode()
-        s = search.LinearSearch(e, initial_horizon)
-        plan = s.do_search()
-        initial_horizon = initial_horizon + 1
+    e = encoder.EncoderSAT(task, modifier, initial_horizon).encode()
+    s = search.LinearSearch(e, initial_horizon)
+    plan = s.do_search()
 
     ## VALidate and print plan
     try:

@@ -23,13 +23,21 @@ class LinearSearch(Search):
 
         solver = Minisat()
         solution = solver.solve(self.encoder)
+        solution_list = list()
 
         if solution.error != False:
             print("Error:")
             print(solution.error)
         elif solution.success:
             print("The expression can be satisfied...")
-            ## Must return a plan object when plan is found 
+            ## Must return a plan object when plan is found
+            for action in self.encoder.action_variables.keys():
+                if solution.varmap[action] is True:
+                    solution_list.append(utils.getStep(action), utils.getAct(action))
+                else:
+                    continue
+                
+            print(solution_list)
             planning = plan.Plan(solution, self.horizon)
             return planning
         else:

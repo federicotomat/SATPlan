@@ -398,3 +398,7 @@ def makeName(name, step):
 def getStep(var_name):
     [name, step] = var_name.split("@")
     return int(step)
+
+def getAct(var_name):
+    [name, step] = var_name.split("@")
+    return str(name)
