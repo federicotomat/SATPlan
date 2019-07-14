@@ -1,6 +1,5 @@
 import itertools
 from z3 import *
-# from translate.pddl import *
 import translate.pddl as pddl
 from collections import Iterable
 import os
@@ -392,6 +391,7 @@ def visitor(e, seen):
             yield e
     return
 
+## Added Functions
 def makeName(name, step):
     return str(name) + "@" + str(step)
 
@@ -402,3 +402,20 @@ def getStep(var_name):
 def getAct(var_name):
     [name, _] = var_name.split("@")
     return str(name)
+
+def make_formula_and(list):
+    for formula_row in list:
+        if formula_row is list[0]:
+            formula = formula_row
+        else:
+            formula &= formula_row
+    return formula
+    
+def make_formula_or(list):
+    for formula_row in list:
+        if formula_row is list[0]:
+            formula = formula_row
+        else:
+            formula |= formula_row
+    return formula
+    

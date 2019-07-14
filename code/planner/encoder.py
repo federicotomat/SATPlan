@@ -9,6 +9,8 @@ import os
 from satispy import Variable, Cnf
 import modifier
 
+# TODO: Finire inserimento commenti 
+
 class EncoderSAT():
 
     def __init__(self, task, modifier, horizon):
@@ -117,13 +119,7 @@ class EncoderSAT():
                 if not var in initial:
                     initial.append(-var)
 
-        for variable in initial:
-            if variable is initial[0]:
-                initial_state = variable
-            else:
-                initial_state = (initial_state & variable)
-
-        return initial_state
+        return utils.make_formula_and(initial)
 
     def encodeGoalState(self):
         """
@@ -163,15 +159,7 @@ class EncoderSAT():
 
             return propositional_subgoal
 
-        propositional_subgoal = encodePropositionalGoals()
-
-        for variable in propositional_subgoal:
-            if variable is propositional_subgoal[0]:
-                encodeGoalState = variable
-            else:
-                encodeGoalState = (encodeGoalState & variable)
-
-        return encodeGoalState
+        return utils.make_formula_and(encodePropositionalGoals())
 
     def encodeActions(self):
         """
@@ -185,11 +173,10 @@ class EncoderSAT():
         for step in range(self.horizon):
             for action in self.actions:
 
-                action_variable = self.action_variables[utils.makeName(
-                    action.name, step)]
+                action_variable = self.action_variables[utils.makeName(action.name, step)]
                 condition_list = list()
 
-                # Encode preconditions
+                ## Encode preconditions
                 for pre in action.condition:
                     pre_name = utils.makeName(pre, step)
                     if pre_name in self.boolean_variables:
@@ -200,36 +187,26 @@ class EncoderSAT():
                             condition_list.append(
                                 self.boolean_variables[pre_name])
 
-                # Encode add effects
+                ## Encode add effects
                 for add in action.add_effects:
                     add_name = utils.makeName(add[1], step + 1)
                     if add_name in self.boolean_variables:
                         condition_list.append(self.boolean_variables[add_name])
 
-                # Encode delete effects
+                ## Encode delete effects
                 for de in action.del_effects:
                     del_name = utils.makeName(de[1], step + 1)
                     if del_name in self.boolean_variables:
                         condition_list.append(
                             -(self.boolean_variables[del_name]))
 
-                # Make AND and insert in list
-                for variable in condition_list:
-                    if variable is condition_list[0]:
-                        formula = variable
-                    else:
-                        formula = formula & variable
+                ## Universal Frame Axiom: (a_i -> (pre ^ add ^ -del))
+                implicated_by_action = utils.make_formula_and(condition_list)
 
-                cond = (action_variable >> formula)
-                actions.append(cond)
+                universal_axiom = (action_variable >> implicated_by_action)
+                actions.append(universal_axiom)
 
-        for subformula in actions:
-            if subformula is actions[0]:
-                encodeActions = subformula
-            else:
-                encodeActions = encodeActions & subformula
-
-        return encodeActions
+        return utils.make_formula_and(actions)
 
     def encodeFrame(self):
         """
@@ -251,7 +228,7 @@ class EncoderSAT():
                 action_add_fluent = list()
 
                 for action in self.actions:
-                    # Check if f is in del of some act_i
+                    ## Check if f is in del of some act_i
                     for de in action.del_effects:
                         del_name = utils.makeName(de[1], step)
                         if del_name in self.boolean_variables:
@@ -259,8 +236,7 @@ class EncoderSAT():
                                 action_delete_fluent.append(
                                     self.action_variables[utils.makeName(action.name, step)])
 
-
-                    # Check of f is in add of some act_i
+                    ## Check of f is in add of some act_i
                     for add in action.add_effects:
                         add_name = utils.makeName(add[1], step)
                         if add_name in self.boolean_variables:
@@ -268,37 +244,24 @@ class EncoderSAT():
                                 action_add_fluent.append(
                                     self.action_variables[utils.makeName(action.name, step)])
 
+                # TODO: qua ci va un commento
                 if len(action_delete_fluent) is not 0:
-                    for formula in action_delete_fluent:
-                        if formula is action_delete_fluent[0]:
-                            exp = formula
-                        else:
-                            exp = exp | formula
-                    frame.append((fluent_i & -(fluent_i_plus_one)) >> exp)
+                    del_action = utils.make_formula_or(action_delete_fluent)
+                    frame.append((fluent_i & -(fluent_i_plus_one)) >> del_action)
                 else:
                     frame.append((-(fluent_i) | fluent_i_plus_one))
                     
                 if len(action_add_fluent) is not 0:
-                    for formula in action_add_fluent:
-                        if formula is action_add_fluent[0]:
-                            exp = formula
-                        else:
-                            exp = exp | formula
-                    frame.append((-(fluent_i) & fluent_i_plus_one) >> exp)
+                    add_action = utils.make_formula_or(action_add_fluent)
+                    frame.append((-(fluent_i) & fluent_i_plus_one) >> add_action)
                 else:
                     frame.append((fluent_i | -(fluent_i_plus_one)))
-       
-        for subformula in frame:
-            if subformula is frame[0]:
-                encodeFrame = subformula
-            else:
-                encodeFrame = encodeFrame & subformula
-        
-        return encodeFrame
+
+        return utils.make_formula_and(frame)
 
     def encodeAtLeastOne(self):
 
-        atleastone = []
+        at_least_one = []
         action_set = set()
 
         for act in self.action_variables:
@@ -313,60 +276,47 @@ class EncoderSAT():
                 action_name = utils.makeName(act, step)
                 if action_name in self.action_variables:
                     if act is action_list[0]:
-                        variable = self.action_variables[action_name]
+                        at_least_component = self.action_variables[action_name]
                     else:
-                        variable = variable | self.action_variables[action_name]
-            atleastone.append(variable)
+                        at_least_component = at_least_component | self.action_variables[action_name]
+            at_least_one.append(at_least_component)
 
-        for subformula in atleastone:
-            if subformula is atleastone[0]:
-                encodeAtLeastOne = subformula
-            else:
-                encodeAtLeastOne = encodeAtLeastOne & subformula
-
-        return encodeAtLeastOne
+        return utils.make_formula_and(at_least_one)
 
     def encodeExecutionSemantics(self):
+        modicator = modifier.EncodeModifier(self.horizon, self.actions, self.boolean_variables, self.action_variables)
         if self.modifier is True:
-            return modifier.Modifier().encodeParallelModifier(self.horizon, self.actions, self.boolean_variables, self.action_variables)
+            return modicator.encode_parallel_modifier()
         else:
-            return modifier.Modifier().encodeLinearModifier(self.horizon, self.actions, self.action_variables)
+            return modicator.encode_linear_modifier()
 
     def do_encode(self):
 
-        # Create variables
+        ## Create variables
         self.createVariables()
 
-        ### Start encoding formula ###
+        ## Start encoding formula
         formula = defaultdict(list)
 
-        # Encode initial state axioms
+        ## Encode initial state axioms
         formula['initial'] = self.encodeInitialState()
-
-        # Encode goal state axioms
+        
+        ## Encode goal state axioms
         formula['goal'] = self.encodeGoalState()
 
-        # Encode universal axioms
+        ## Encode universal axioms
         formula['actions'] = self.encodeActions()
 
-        # Encode explanatory frame axioms
+        ## Encode explanatory frame axioms
         formula['frame'] = self.encodeFrame()
 
-        # Encode execution semantics (lin/par)
+        ## Encode execution semantics (lin/par)
         formula['sem'] = self.encodeExecutionSemantics()
 
-        # Encode at least one axioms
+        ## Encode at least one axioms
         formula['alo'] = self.encodeAtLeastOne()
 
-        control = False
-        for row in formula.values():
-            if control is False:
-                formulaToSolve = row
-                control = True
-            else:
-                formulaToSolve &= row
-
-        return formulaToSolve
+        return utils.make_formula_and(formula.values())
 
     def dump(self):
         print('Dumping encoding')

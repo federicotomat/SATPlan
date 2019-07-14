@@ -1,40 +1,30 @@
 from satispy import Variable, Cnf
 import utils
-from itertools import combinations
 
-# TODO: Per il momento sono banalmente delle funzioni, bisogna riorganizzare
+class EncodeModifier():
 
-
-class Modifier():
-
-    def encodeLinearModifier(self, horizon, actions, action_variables):
-        self.horizon = horizon
-        self.actions = actions
-        self.action_variables = action_variables
-        mutexes = []
-
-        for a1, a2 in combinations(self.actions, 2):
-            for step in range(self.horizon):
-                mutexes.append(-(self.action_variables[utils.makeName(a1.name, step)]) | -(
-                    self.action_variables[utils.makeName(a2.name, step)]))
-
-        for formula in mutexes:
-            if formula is mutexes[0]:
-                sem = formula
-            else:
-                sem = sem & formula
-        return sem
-
-    ## Lo uso per fare il Linear Modifier ##
-    def encodeParallelModifier(self, horizon, actions, boolean_variables, action_variables):
-        """
-        Compute mutually exclusive actions using the conditions
-        we saw during lecture
-        """
+    def __init__(self, horizon, actions, boolean_variables, action_variables):
         self.horizon = horizon
         self.actions = actions
         self.boolean_variables = boolean_variables
         self.action_variables = action_variables
+
+    ## Encode Linear Modifier ##
+    def encode_linear_modifier(self):
+
+        mutexes = []
+
+        for step in range(self.horizon):
+            for a1 in self.actions:
+                for a2 in self.actions:
+                    if not a1.name == a2.name:
+                        mutexes.append(-(self.action_variables[utils.makeName(a1.name, step)]) | -(self.action_variables[utils.makeName(a2.name, step)]))
+
+        return utils.make_formula_and(mutexes)
+
+    ## Encode Parallel Modifier ##
+    def encode_parallel_modifier(self):
+
         mutexes = []
         for step in range(self.horizon):
             for a1 in self.actions:
@@ -65,9 +55,4 @@ class Modifier():
                             mutexes.append(-(self.action_variables[utils.makeName(a1.name, step)]) | -(
                                 self.action_variables[utils.makeName(a2.name, step)]))
 
-        for formula in mutexes:
-            if formula is mutexes[0]:
-                sem = formula
-            else:
-                sem = sem & formula
-        return sem
+        return utils.make_formula_and(mutexes)

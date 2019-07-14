@@ -9,7 +9,6 @@ import utils
 from planner import encoder
 from planner import modifier
 from planner import search
-import time
 
 val_path = '/bin/validate'
 
@@ -18,7 +17,6 @@ def main(BASE_DIR):
     ## Parse planner args
     args = arguments.parse_args()
 
-    # print args.domain
     ## Run PDDL translator (from TFD)
     prb = args.problem
     if args.domain:
@@ -27,7 +25,6 @@ def main(BASE_DIR):
     else:
         task = translate.pddl.open(prb)
         domain = utils.getDomainName(prb)
-
 
     ## Compute initial horizon estimate
     ## querying a satisficing planner
@@ -59,8 +56,7 @@ def main(BASE_DIR):
         print(out)
         sys.exit()
 
-    ## Compose encoder and search
-    ## according to user flags
+    ## Here we check if we have to do the search in linear or in parallel
 
     if args.parallel:
         modifier = True
@@ -73,11 +69,11 @@ def main(BASE_DIR):
 
     ## VALidate and print plan
     try:
-         # TODO: Ho la soluzione, nella validation, devo stamparla, step per step cosa devo fare
-        if plan.validate(val, domain, prb):
+        validate = plan.validate(val, domain, prb)
+        if validate:
             print('\nPlan found!')
             print('\nCost: {}\n'.format(plan.cost))
-            print(plan.validate(val, domain, prb))
+            print(validate)
         else:
             print('Plan not valid, exiting now...')
             sys.exit()
