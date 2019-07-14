@@ -16,6 +16,7 @@ cd ~/SATPlan/code/enhsp
 ```
 Go back to previous folder, export your python path to the folder of the code and run the code on a PDDL domain:
 ```
+cd ..
 export PYTHONPATH="<(your_path)>"
 python2 plan.py -domain <(pddl-domain) <(pddl-problem)>
 ```
