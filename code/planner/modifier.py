@@ -1,8 +1,10 @@
 from satispy import Variable, Cnf
 import utils
-from itertools import combinations 
+from itertools import combinations
 
 # TODO: Per il momento sono banalmente delle funzioni, bisogna riorganizzare
+
+
 class Modifier():
 
     def encodeLinearModifier(self, horizon, actions, action_variables):
@@ -13,7 +15,8 @@ class Modifier():
 
         for a1, a2 in combinations(self.actions, 2):
             for step in range(self.horizon):
-                mutexes.append(-(self.action_variables[utils.makeName(a1.name, step)]) | -(self.action_variables[utils.makeName(a2.name, step)]))
+                mutexes.append(-(self.action_variables[utils.makeName(a1.name, step)]) | -(
+                    self.action_variables[utils.makeName(a2.name, step)]))
 
         for formula in mutexes:
             if formula is mutexes[0]:

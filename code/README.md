@@ -1,3 +1,4 @@
+##Purpose##
 The final project consists in the implementation of a SAT based planner that
 leverages the SAT solver you implemented during the first half of the course.
 
@@ -24,19 +25,7 @@ Your code MUST run without throwing unhandled exceptions, seg faults etc.
 It's python code, so there's a good chance everything will work fine. 
 But if it does not, you will lose points.
 
-Code provided:
-enhsp is the code for planning that is base on heuristic(?) and need to have java
-	(lower bound for the exploration) oherwise we can go for a horizon with exponential growth 		(2-4-8-16-..) and sometimes we know the length of the plan (for some problems)
-
-translate: translate the project at run time and (online temporal fast downward)
-
-driver has the main file that run the code and have to convert pddl in a FOL structure
-
-planner: here we have to modify majority of the code, we have to implement or conclude the algorithm of encoding and searching
-
-convert problem into planning domain to the PL domain so before we have to translate their
-
-EXEC:
+##Execution##
 
 1. export PYTHONPATH="/home/federico/Scrivania/SATPlan/code/"
 2. python2 plan.py -domain /home/federico/Scrivania/SATPlan/domains/blockworld/domain.pddl /home/federico/Scrivania/SATPlan/domains/blockworld/instances/pb2.pddl

@@ -9,6 +9,7 @@ import utils
 from planner import encoder
 from planner import modifier
 from planner import search
+import time
 
 val_path = '/bin/validate'
 
@@ -66,7 +67,7 @@ def main(BASE_DIR):
     else:
         modifier = False
 
-    e = encoder.EncoderSAT(task, modifier, initial_horizon).encode()
+    e = encoder.EncoderSAT(task, modifier, initial_horizon)
     s = search.LinearSearch(e, initial_horizon)
     plan = s.do_search()
 
@@ -76,8 +77,7 @@ def main(BASE_DIR):
         if plan.validate(val, domain, prb):
             print('\nPlan found!')
             print('\nCost: {}\n'.format(plan.cost))
-            for k,v in plan.plan.items():
-                print('Step {}: {}'.format(k, v))
+            print(plan.validate(val, domain, prb))
         else:
             print('Plan not valid, exiting now...')
             sys.exit()

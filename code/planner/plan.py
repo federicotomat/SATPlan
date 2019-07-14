@@ -2,6 +2,7 @@ import utils
 import subprocess
 import sys
 
+
 class Plan():
     def __init__(self, plan, horizon):
         self.plan = plan
@@ -12,7 +13,9 @@ class Plan():
 
         print('Validating plan...')
 
-        plan_to_str = '\n'.join('{}: {}'.format(key, val) for key, val in self.plan.items())
+        plan_to_str = ""
+        for row in self.plan:
+            plan_to_str += str(row[0]) + ":" + row[1] + "\n"
 
         with NamedTemporaryFile(mode='w+') as temp:
 
@@ -22,7 +25,7 @@ class Plan():
             try:
                 output = subprocess.check_output([val, domain, problem, temp.name])
 
-            except subprocess.CalledProcessError as e:
+            except subprocess.CalledProcessError:
 
                 print('Unknown error, exiting now...')
                 sys.exit()
