@@ -27,3 +27,9 @@ cd ..
 export PYTHONPATH="<(folder-path)>"
 python2 plan.py -domain <(path-pddl-domain) <(path-pddl-problem)>
 ```
+
+# Authors
+| Name | E-mail |
+|------|--------|
+| Giovanni Battista Borrè | giovaborr@gmail.com |
+| Federico Tomat | tomatfede@gmail.com |
