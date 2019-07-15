@@ -11,8 +11,8 @@ git clone https://github.com/federicotomat/SATPlan.git
 ```
 Install the required libraries and the Minisat solver:
 ```
-cd ~/SATPlan/
-pip -r requirements.txt
+cd ~/SATPlan
+pip install -r requirements.txt
 sudo apt-get update
 sudo apt-get install minisat
 ```
@@ -24,7 +24,6 @@ cd code/enhsp
 Turn in the main folder, export python path and run the code on a PDDL problem:
 ```
 cd ..
-export PYTHONPATH="<(your_path)>"
-python2 plan.py -domain <(pddl-domain) <(pddl-problem)>
+export PYTHONPATH="<(folder-path)>"
+python2 plan.py -domain <(path-pddl-domain) <(path-pddl-problem)>
 ```
-
