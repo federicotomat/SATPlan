@@ -14,10 +14,10 @@ val_path = '/bin/validate'
 
 def main(BASE_DIR):
 
-    ## Parse planner args
+    # Parse planner args
     args = arguments.parse_args()
 
-    ## Run PDDL translator (from TFD)
+    # Run PDDL translator (from TFD)
     prb = args.problem
     if args.domain:
         domain = args.domain
@@ -26,9 +26,9 @@ def main(BASE_DIR):
         task = translate.pddl.open(prb)
         domain = utils.getDomainName(prb)
 
-    ## Compute initial horizon estimate
-    ## querying a satisficing planner
-    ## here: ENHSP by Enrico Scala
+    # Compute initial horizon estimate
+    # querying a satisficing planner
+    # here: ENHSP by Enrico Scala
 
     hplan = BASE_DIR + '/enhsp/enhsp'
     val = BASE_DIR + '/bin/validate'
@@ -42,21 +42,21 @@ def main(BASE_DIR):
         sys.exit()
 
 
-    ## Extract plan length from output of ENHSP
+    # Extract plan length from output of ENHSP
     match = re.search('Plan-Length:(\d+)', out)
     if match:
         initial_horizon = int(match.group(1))
         print('Initial horizon: {}'.format(initial_horizon))
 
     else:
-        ## Computing horizon with GBFS failed for some reason
+        # Computing horizon with GBFS failed for some reason
         print('Could not determine initial horizon with GBFS...')
 
-        ## Print output of ENHSP for diagnosis and exit
+        # Print output of ENHSP for diagnosis and exit
         print(out)
         sys.exit()
 
-    ## Here we check if we have to do the search in linear or in parallel
+    # Here we check if we have to do the search in linear or in parallel
 
     if args.parallel:
         modifier = True
@@ -67,7 +67,7 @@ def main(BASE_DIR):
     s = search.LinearSearch(e, initial_horizon)
     plan = s.do_search()
 
-    ## VALidate and print plan
+    # Validate and print plan
     try:
         validate = plan.validate(val, domain, prb)
         if validate:

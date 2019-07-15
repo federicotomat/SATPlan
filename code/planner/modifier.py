@@ -9,7 +9,7 @@ class EncodeModifier():
         self.boolean_variables = boolean_variables
         self.action_variables = action_variables
 
-    ## Encode Linear Modifier ##
+    # Encode Linear Modifier
     def encode_linear_modifier(self):
 
         mutexes = []
@@ -22,7 +22,7 @@ class EncodeModifier():
 
         return utils.make_formula_and(mutexes)
 
-    ## Encode Parallel Modifier ##
+    # Encode Parallel Modifier
     def encode_parallel_modifier(self):
 
         mutexes = []

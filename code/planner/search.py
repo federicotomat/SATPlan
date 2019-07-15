@@ -13,7 +13,7 @@ class Search():
 
 class LinearSearch(Search):
 
-    ## Find the path that joins start and goal, returns the list of actions ##
+    # Find the path from start to goal and returns the list of actions
     def do_search(self):
 
         print('Start linear search...')

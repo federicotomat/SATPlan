@@ -9,11 +9,20 @@ import os
 from satispy import Variable, Cnf
 import modifier
 
-# TODO: Finire inserimento commenti 
-
 class EncoderSAT():
-
+    
     def __init__(self, task, modifier, horizon):
+        """
+        From the translate you have:
+        - Boolean fluents
+        - Actions
+        - Numeric fluents
+        - Axioms
+        - Numeric axioms --> - Axioms by name
+                             - Depends on
+                             - Axioms by layer
+        """
+
         self.task = task
         self.modifier = modifier
         self.horizon = horizon
@@ -24,20 +33,11 @@ class EncoderSAT():
          self.axioms,
          self.numeric_axioms) = self.ground()
 
-        # Dai costruttori ho:
-        # 1. Boolean fluents
-        # 2. Actions
-        # 3. Numeric fluents
-        # 4. Axioms
-        # 5. Numeric axioms --> 1. Axioms by name
-        #                       2. Depends on
-        #                       3. Axioms by layer
-
         (self.axioms_by_name,
          self.depends_on,
          self.axioms_by_layer) = self.sort_axioms()
 
-    # A term is ground iff it does not contain variables in it.
+    ## A term is ground iff it does not contain variables in it.
     def ground(self):
         """
         Ground action schemas:
@@ -52,10 +52,7 @@ class EncoderSAT():
 
         return boolean_fluents, actions, numeric_fluents, axioms, numeric_axioms
 
-    # A fluent is a condition that can change over time, in FOL, the fluents are represented by predicates having an argument that depend on time.
-    # An atom is an expression of the form P(t1...) where P is an n-ary predicate applied to n terms. A literal is an atom or its negation.
-    # A state is a conjuction of ground atoms.
-
+    ## A fluent is a condition that can change over time.
     def sort_axioms(self):
         """
         Returns 3 dictionaries:
@@ -78,16 +75,21 @@ class EncoderSAT():
 
         return axioms_by_name, depends_on, axioms_by_layer
 
-    def createVariables(self):
 
-        ### Create boolean variables for boolean fluents ###
+    ## Create boolean variables for boolean fluents and propositional variables for actions ids.
+    def createVariables(self):
+        """
+        Allocate 2 dictionaries:
+        - boolean variables
+        - action variable
+        """
+
         self.boolean_variables = defaultdict(dict)
         for step in range(self.horizon + 1):
             for fluent in self.boolean_fluents:
                 var_name = utils.makeName(fluent, step)
                 self.boolean_variables.update({var_name: Variable(var_name)})
 
-        ### Create propositional variables for actions ids ###
         self.action_variables = defaultdict(dict)
         for step in range(self.horizon):
             for a in self.actions:
@@ -95,9 +97,10 @@ class EncoderSAT():
                 self.action_variables.update(
                     {action_name: Variable(action_name)})
 
+    ##  Encode formula defining initial state
     def encodeInitialState(self):
         """
-        Encode formula defining initial state
+        Returns the formula that encode the initial state (Inital State Axioms).
         """
 
         initial = []
@@ -121,9 +124,10 @@ class EncoderSAT():
 
         return utils.make_formula_and(initial)
 
+    ## Encode formula defining goal state
     def encodeGoalState(self):
         """
-        Encode formula defining goal state
+        Returns the formula that encode the goal state (Goal State Axioms).
         """
 
         def encodePropositionalGoals(goal=None):
@@ -161,11 +165,10 @@ class EncoderSAT():
 
         return utils.make_formula_and(encodePropositionalGoals())
 
+    ## Encode action constraints: each action variable implies its preconditions and effects
     def encodeActions(self):
         """
-        Encode action constraints:
-        each action variable implies its preconditions
-        and effects
+        Returns the encoded formula for actions (Universal Frame Axioms).
         """
 
         actions = []
@@ -176,7 +179,7 @@ class EncoderSAT():
                 action_variable = self.action_variables[utils.makeName(action.name, step)]
                 condition_list = list()
 
-                ## Encode preconditions
+                # Encode preconditions
                 for pre in action.condition:
                     pre_name = utils.makeName(pre, step)
                     if pre_name in self.boolean_variables:
@@ -187,20 +190,20 @@ class EncoderSAT():
                             condition_list.append(
                                 self.boolean_variables[pre_name])
 
-                ## Encode add effects
+                # Encode add effects
                 for add in action.add_effects:
                     add_name = utils.makeName(add[1], step + 1)
                     if add_name in self.boolean_variables:
                         condition_list.append(self.boolean_variables[add_name])
 
-                ## Encode delete effects
+                # Encode delete effects
                 for de in action.del_effects:
                     del_name = utils.makeName(de[1], step + 1)
                     if del_name in self.boolean_variables:
                         condition_list.append(
                             -(self.boolean_variables[del_name]))
 
-                ## Universal Frame Axiom: (a_i -> (pre ^ add ^ -del))
+                # Universal Frame Axiom: (a_i -> (pre_a_i ^ add_a_i ^ -del_a_i))
                 implicated_by_action = utils.make_formula_and(condition_list)
 
                 universal_axiom = (action_variable >> implicated_by_action)
@@ -208,9 +211,10 @@ class EncoderSAT():
 
         return utils.make_formula_and(actions)
 
+    ## Encode explanatory frame axioms
     def encodeFrame(self):
         """
-        Encode explanatory frame axioms
+        Returns the formula that encode the Explanatory Frame Axioms
         """
 
         frame = []
@@ -228,7 +232,7 @@ class EncoderSAT():
                 action_add_fluent = list()
 
                 for action in self.actions:
-                    ## Check if f is in del of some act_i
+                    # Check if f is in del of some act_i
                     for de in action.del_effects:
                         del_name = utils.makeName(de[1], step)
                         if del_name in self.boolean_variables:
@@ -236,7 +240,7 @@ class EncoderSAT():
                                 action_delete_fluent.append(
                                     self.action_variables[utils.makeName(action.name, step)])
 
-                    ## Check of f is in add of some act_i
+                    # Check if f is in add of some act_i
                     for add in action.add_effects:
                         add_name = utils.makeName(add[1], step)
                         if add_name in self.boolean_variables:
@@ -244,13 +248,15 @@ class EncoderSAT():
                                 action_add_fluent.append(
                                     self.action_variables[utils.makeName(action.name, step)])
 
-                # TODO: qua ci va un commento
-                if len(action_delete_fluent) is not 0:
+                # Explantory Frame Axiom: 
+                # If action_delete_fluent (by actions) is not zero: ((f_i & -f_i+1) -> Or(a_i))
+                if len(action_delete_fluent) is not 0: 
                     del_action = utils.make_formula_or(action_delete_fluent)
                     frame.append((fluent_i & -(fluent_i_plus_one)) >> del_action)
                 else:
                     frame.append((-(fluent_i) | fluent_i_plus_one))
                     
+                # If ction_add_fluent (by actions) is not zero: ((-f_i & f_i+1) -> Or(a_i))
                 if len(action_add_fluent) is not 0:
                     add_action = utils.make_formula_or(action_add_fluent)
                     frame.append((-(fluent_i) & fluent_i_plus_one) >> add_action)
@@ -259,7 +265,11 @@ class EncoderSAT():
 
         return utils.make_formula_and(frame)
 
+    ## Encode At Least One frame axioms
     def encodeAtLeastOne(self):
+        """
+        Returns the encoding formula of at least one
+        """
 
         at_least_one = []
         action_set = set()
@@ -283,37 +293,46 @@ class EncoderSAT():
 
         return utils.make_formula_and(at_least_one)
 
+    ## Encode The Execution Semantics
     def encodeExecutionSemantics(self):
+        """
+        Returns in base on modifier, the paraller or the linear execution.
+        """
+
         modicator = modifier.EncodeModifier(self.horizon, self.actions, self.boolean_variables, self.action_variables)
         if self.modifier is True:
             return modicator.encode_parallel_modifier()
         else:
             return modicator.encode_linear_modifier()
 
+    ## Encode The Propositional Formula
     def do_encode(self):
+        """
+        Returns the formula to be solved.
+        """
 
-        ## Create variables
+        # Create variables
         self.createVariables()
 
-        ## Start encoding formula
+        # Start encoding formula
         formula = defaultdict(list)
 
-        ## Encode initial state axioms
+        # Encode initial state axioms
         formula['initial'] = self.encodeInitialState()
         
-        ## Encode goal state axioms
+        # Encode goal state axioms
         formula['goal'] = self.encodeGoalState()
 
-        ## Encode universal axioms
+        # Encode universal axioms
         formula['actions'] = self.encodeActions()
 
-        ## Encode explanatory frame axioms
+        # Encode explanatory frame axioms
         formula['frame'] = self.encodeFrame()
 
-        ## Encode execution semantics (lin/par)
+        # Encode execution semantics (lin/par)
         formula['sem'] = self.encodeExecutionSemantics()
 
-        ## Encode at least one axioms
+        # Encode at least one axioms
         formula['alo'] = self.encodeAtLeastOne()
 
         return utils.make_formula_and(formula.values())
