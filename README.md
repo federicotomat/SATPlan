@@ -25,7 +25,7 @@ Turn in the main folder, export python path and run the code on a PDDL problem:
 ```
 cd ..
 export PYTHONPATH="<(folder-path)>"
-python2 plan.py -domain <(path-pddl-domain) <(path-pddl-problem)>
+python2 plan.py -domain <(path-pddl-domain)> <(path-pddl-problem)>
 ```
 
 # Authors
